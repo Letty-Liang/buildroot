@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-
+# export JAVA_HOME=$(/usr/libexec/java_home -v 1.7)
+#java 7 打出来的jar 才可以在在gradle tool3.0以下变成dex
 ENGINE_SRC=/Users/liangting/AndroidStudioProjects/engine/src
 ENGINE_OUT=$ENGINE_SRC/out
 
@@ -10,7 +11,7 @@ ENGINE_TARGET_DIR=/Users/liangting/flutter/bin/cache/artifacts
 ENGINE_TARGET=$ENGINE_TARGET_DIR/engine
 
 
-REGENERATE=false
+REGENERATE=true
 
 cd $ENGINE_SRC
 
@@ -49,7 +50,7 @@ if [ $REGENERATE = 'true' ];then
     ./flutter/tools/gn  --runtime-mode=debug --unoptimized --no-lto
 
 
-    cd 
+    cd out
     for f in `ls`;do ninja -C $f;done
 
 
@@ -58,7 +59,8 @@ if [ $REGENERATE = 'true' ];then
 
     cd $ENGINE_OUT
     for f in `ls | grep android`;
-        do cd $f && pwd
+        do 
+        cd $f && pwd
         unzip -o flutter.jar lib/armeabi-v7a/libflutter.so
         mkdir lib/armeabi
         cp lib/armeabi-v7a/libflutter.so lib/armeabi/libflutter.so
@@ -214,4 +216,4 @@ cd $ENGINE_TARGET_DIR
 pwd
 zip -r engine.zip  engine
  # todo upload 抽一下
-node /Users/liangting/AndroidStudioProjects/aimeituanmonitor/uploadMSS.js
+# node /Users/liangting/AndroidStudioProjects/aimeituanmonitor/uploadMSS.js
