@@ -76,7 +76,6 @@ fi
     #node /Users/liangting/AndroidStudioProjects/aimeituanmonitor/uploadMSS.js
     SKY_ENGINE=""
 
-SKY_ENGINE=http://s3plus.vip.sankuai.com/v1/mss_fe671a26a3fc4d3aad4b87fbb1a46f10/hawkeye/MTFlutter/custom/1547804562230.zip
 
 
 # STEP4 modify original artifacts
