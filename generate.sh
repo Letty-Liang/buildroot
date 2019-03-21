@@ -1,15 +1,13 @@
 #!/usr/bin/env bash
-# export JAVA_HOME=$(/usr/libexec/java_home -v 1.7)
 #java 7 打出来的jar 才可以在在gradle tool3.0以下变成dex
+
 ENGINE_SRC=/Users/liangting/AndroidStudioProjects/engine/src
-ENGINE_OUT=$ENGINE_SRC/out
+ENGINE_OUT=${ENGINE_SRC}/out
 
-SDK_ENGINE=/Users/liangting/flutter/bin/cache/artifacts/engine
-# ENGINE_TARGET_DIR=/Users/liangting/Downloads
-ENGINE_TARGET_DIR=/Users/liangting/flutter/bin/cache/artifacts
-
-ENGINE_TARGET=$ENGINE_TARGET_DIR/engine
-
+FLUTTER_DIR=/Users/liangting/Downloads/flutter
+FLUTTER_TARGET_CACHE=${FLUTTER_DIR}/bin/cache
+ARTIFACTS_DIR=${FLUTTER_TARGET_CACHE}/artifacts
+ENGINE_TARGET=${ARTIFACTS_DIR}/engine
 
 REGENERATE=true
 
@@ -19,14 +17,12 @@ cd $ENGINE_SRC
 echo '=========STEP1========'
 
 if [ $REGENERATE = 'true' ];then
-    echo 'hahh'
     #【android-cpu默认就是arm，runtime-mode默认是debug】
     ./flutter/tools/gn --android --android-cpu=arm --runtime-mode=debug
     ./flutter/tools/gn --android --android-cpu=arm --runtime-mode=profile
     ./flutter/tools/gn --android --android-cpu=arm --runtime-mode=release
     ./flutter/tools/gn --android --android-cpu=arm --runtime-mode=profile --dynamic
     ./flutter/tools/gn --android --android-cpu=arm --runtime-mode=release --dynamic
-    echo 'hahh222'
 
     ./flutter/tools/gn --android --android-cpu=arm64 --runtime-mode=debug
     ./flutter/tools/gn --android --android-cpu=arm64 --runtime-mode=profile
@@ -51,8 +47,10 @@ if [ $REGENERATE = 'true' ];then
 
 
     cd out
-    for f in `ls`;do ninja -C $f;done
-
+    for f in `ls | grep host`;do ninja -C $f;done
+    for f in `ls | grep android`;do ninja -C $f flutter/lib/snapshot;done
+    for f in `ls | grep ios`;do ninja -C $f;done
+    
 
     # STEP3 Android armeabi支持
     echo '=========STEP3========'
@@ -69,19 +67,15 @@ if [ $REGENERATE = 'true' ];then
     done
 fi
 
-    # STEP2 upload the engine dart part 2 MSS 
-    cd $ENGINE_OUT
-    zip -r host_debug/gen/dart-pkg.zip host_debug/gen/dart-pkg 
-    # todo upload 抽一下
-    #node /Users/liangting/AndroidStudioProjects/aimeituanmonitor/uploadMSS.js
-    SKY_ENGINE=""
-
-
+    # # STEP2 upload the engine dart part 2 MSS 
+    # cd $ENGINE_OUT
+    # zip -r host_debug/gen/dart-pkg.zip host_debug/gen/dart-pkg 
+    # # todo upload 抽一下
+    # #node /Users/liangting/AndroidStudioProjects/aimeituanmonitor/uploadMSS.js
+    # SKY_ENGINE=""
 
 # STEP4 modify original artifacts
 echo '=========STEP4========'
-
-# cp -r $SDK_ENGINE $ENGINE_TARGET_DIR
 
 # 替换engine中的文件Flutter.framework/flutter.jar(libflutter.so)/gen_snapshot 
 cd $ENGINE_OUT
@@ -142,7 +136,7 @@ cp ios_release/clang_x64/gen_snapshot ${ENGINE_TARGET}/ios-release
 
 # flutter_patched_sdk
 # client side common flutter_patched_sdk
-cp host_debug/flutter_patched_sdk/* ${ENGINE_TARGET}/common/flutter_patched_sdk
+cp -r host_debug/flutter_patched_sdk/* ${ENGINE_TARGET}/common/flutter_patched_sdk
 
 # darwin-x64 —— server side 
 cp host_debug_unopt/flutter_tester ${ENGINE_TARGET}/darwin-x64
@@ -153,6 +147,12 @@ cp host_dynamic_release/gen/flutter/lib/snapshot/isolate_snapshot.bin ${ENGINE_T
 cp host_dynamic_release/gen/flutter/lib/snapshot/vm_isolate_snapshot.bin ${ENGINE_TARGET}/darwin-x64/product_vm_isolate_snapshot.bin
 
 
+# dart-sdk
+cp -r host_debug/dart-sdk/* $FLUTTER_TARGET_CACHE/dart-sdk
+
+#sky
+cp -r host_debug/gen/dart-pkg/sky_engine/* $FLUTTER_TARGET_CACHE/pkg/sky_engine
+
 # 这部分有Flutter.framework
 # ios/Flutter.framework
 # ios-profile/Flutter.framework
@@ -162,6 +162,7 @@ function PackageIOSVariant(){
   arm64_out=$2
   armv7_out=$3
   sim_out=$4
+  target=$5
   checkout=$ENGINE_SRC
   out_dir=$ENGINE_OUT
   cd $ENGINE_SRC
@@ -185,13 +186,7 @@ function PackageIOSVariant(){
   echo "PackageIOSVariant Create macOS "${label}" gen_snapshot"
   ./flutter/sky/tools/create_macos_gen_snapshot.py --dst $label_dir --arm64-out-dir $out_dir/$arm64_out --armv7-out-dir $out_dir/$armv7_out 
 
-  if [ $label = 'debug' ]; then
-    cp -r $label_dir/* ${ENGINE_TARGET}/ios
-  elif [ $label = 'release' ]; then
-    cp -r $label_dir/* ${ENGINE_TARGET}/ios-release
-  elif [ $label = 'profile' ]; then
-    cp -r $label_dir/* ${ENGINE_TARGET}/ios-profile
-  fi  
+  cp -r $label_dir/* ${ENGINE_TARGET}/${target}
 
 # ignore Flutter.podspec we did not change it
 #   # Upload the artifacts to cloud storage.
@@ -206,13 +201,30 @@ PackageIOSVariant debug ios_debug ios_debug_arm ios_debug_sim ios
 PackageIOSVariant profile ios_profile ios_profile_arm ios_debug_sim ios-profile
 PackageIOSVariant release ios_release ios_release_arm ios_debug_sim ios-release
 
-
-
 # STEP5 upload engine 
-echo '=========STEP5========'
+# echo '=========STEP5========'
 
-cd $ENGINE_TARGET_DIR
-pwd
-zip -r engine.zip  engine
- # todo upload 抽一下
-# node /Users/liangting/AndroidStudioProjects/aimeituanmonitor/uploadMSS.js
+pushd ${ENGINE_SRC}/flutter
+revision="$(git rev-parse HEAD)"
+STAMP_PATH=${FLUTTER_DIR}/bin/cache/mtcache.stamp
+echo "revision" > "$STAMP_PATH"
+popd
+
+popd
+#full flutter
+pushd ${FLUTTER_DIR}/..
+zip -r flutter-MT.zip flutter
+s3cmd put flutter-MT.zip s3://flutter/MTCustom/${revision}/flutter-MT.zip
+#rm flutter-MT.zip
+popd
+
+#only cache
+pushd ${FLUTTER_TARGET_CACHE}/..
+zip -r flutter-MT-cache.zip cache
+s3cmd put flutter-MT-cache.zip s3://flutter/MTCustom/${revision}/flutter-MT-cache.zip
+rm flutter-MT-cache.zip
+popd
+
+echo "version flutter: "${revision}
+echo "full flutter: "/flutter/MTCustom/${revision}/flutter-MT.zip
+echo "flutter cache: "/flutter/MTCustom/${revision}/flutter-MT-cache.zip
