@@ -201,16 +201,15 @@ PackageIOSVariant debug ios_debug ios_debug_arm ios_debug_sim ios
 PackageIOSVariant profile ios_profile ios_profile_arm ios_debug_sim ios-profile
 PackageIOSVariant release ios_release ios_release_arm ios_debug_sim ios-release
 
-# STEP5 upload engine 
-# echo '=========STEP5========'
+STEP5 upload engine 
+echo '=========STEP5========'
 
 pushd ${ENGINE_SRC}/flutter
 revision="$(git rev-parse HEAD)"
 STAMP_PATH=${FLUTTER_DIR}/bin/cache/mtcache.stamp
-echo "revision" > "$STAMP_PATH"
+echo "$revision" > "$STAMP_PATH"
 popd
 
-popd
 #full flutter
 pushd ${FLUTTER_DIR}/..
 zip -r flutter-MT.zip flutter
