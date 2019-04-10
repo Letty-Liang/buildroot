@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 #java 7 打出来的jar 才可以在在gradle tool3.0以下变成dex
 
-ENGINE_SRC=/Users/liangting/AndroidStudioProjects/engine/src
+ENGINE_SRC=$(dirname $0)
 ENGINE_OUT=${ENGINE_SRC}/out
 
-FLUTTER_DIR=/Users/liangting/Downloads/flutter
+FLUTTER_DIR=${1:-'~/Downloads/flutter'}  
+
 FLUTTER_TARGET_CACHE=${FLUTTER_DIR}/bin/cache
 ARTIFACTS_DIR=${FLUTTER_TARGET_CACHE}/artifacts
 ENGINE_TARGET=${ARTIFACTS_DIR}/engine
 
-REGENERATE=true
+REGENERATE=${2:-'true'}
 
 cd $ENGINE_SRC
 
