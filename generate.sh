@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 #java 7 打出来的jar 才可以在在gradle tool3.0以下变成dex
 
-ENGINE_SRC=$(dirname $0)
+cd `dirname $0`
+echo `pwd`
+ENGINE_SRC=`pwd`
 ENGINE_OUT=${ENGINE_SRC}/out
 
 FLUTTER_DIR=${1:-'~/Downloads/flutter'}  
@@ -13,6 +15,10 @@ ENGINE_TARGET=${ARTIFACTS_DIR}/engine
 REGENERATE=${2:-'true'}
 
 cd $ENGINE_SRC
+
+# cat $0
+echo $ENGINE_TARGET
+echo $ENGINE_OUT
 
 # STEP1 generate engine artifacts
 echo '=========STEP1========'
@@ -202,7 +208,7 @@ PackageIOSVariant debug ios_debug ios_debug_arm ios_debug_sim ios
 PackageIOSVariant profile ios_profile ios_profile_arm ios_debug_sim ios-profile
 PackageIOSVariant release ios_release ios_release_arm ios_debug_sim ios-release
 
-STEP5 upload engine 
+#STEP5 upload engine 
 echo '=========STEP5========'
 
 pushd ${ENGINE_SRC}/flutter
