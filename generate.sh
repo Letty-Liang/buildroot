@@ -55,7 +55,8 @@ if [ $REGENERATE = 'true' ];then
 
     cd out
     for f in `ls | grep host`;do ninja -C $f;done
-    for f in `ls | grep android`;do ninja -C $f flutter/lib/snapshot;done
+    for f in `ls | grep android`;do ninja -C $f ;done
+    #for f in `ls | grep android`;do ninja -C $f flutter/lib/snapshot;done
     for f in `ls | grep ios`;do ninja -C $f;done
     
 
